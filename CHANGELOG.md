@@ -57,8 +57,8 @@
   derive the local player's runtime environment from its non-root user session.
 - Load the system CA bundle when Decky's frozen Python cannot find its default CA
   file or directory, retaining verified HTTPS for requests and player downloads.
-- Use an explicit password input type for the Soloist key and verify the production
-  QAM field is `type="password"` after redeployment.
+- Use a plain text input for the Soloist API key so Steam's keyboard allows clipboard
+  paste. Clear the input after saving without displaying the previously stored key.
 - Add a development SSH deployment helper with strict known-host checks, staging
   outside the plugin directory, worker shutdown verification and code rollback
   that preserves settings.
@@ -69,6 +69,6 @@
   profile and playlists with artwork through the production backend.
 - Install official Soloist through the live Decky RPC over verified HTTPS; confirm
   version 1.3.8.17, build 20260906, successful `--version` execution and resolved libraries.
-- Pass 320 backend tests on the handheld's system Python 3.14, plus 74 local UI
+- Pass 320 backend tests on the handheld's system Python 3.14, plus 75 local UI
   tests, type checking and the production build.
 - Confirm A/B/D-pad navigation and audible game/Spotify balance with the device owner.

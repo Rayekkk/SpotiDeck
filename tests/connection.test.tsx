@@ -8,6 +8,23 @@ const { encode } = vi.hoisted(() => ({ encode: vi.fn().mockResolvedValue('data:i
 vi.mock('qrcode', () => ({ default: { toDataURL: encode } }));
 afterEach(() => { cleanup(); vi.useRealTimers(); encode.mockClear(); });
 
+it('accepts clipboard paste in the visible Soloist key field and clears it after saving', async () => {
+  const user = userEvent.setup();
+  const client = previewClient(false);
+  client.player = vi.fn().mockResolvedValue(undefined);
+  render(<App client={client}/>);
+  await user.click(await screen.findByRole('button', { name: 'Connect Spotify' }));
+  const field = screen.getByRole('textbox', { name: 'Soloist API key' }) as HTMLInputElement;
+  expect(field.type).toBe('text');
+  expect(field.value).toBe('');
+  await user.click(field);
+  await user.paste('  demo-player-key-for-paste  ');
+  expect(field.value).toBe('  demo-player-key-for-paste  ');
+  await user.click(screen.getByRole('button', { name: 'Save player key' }));
+  expect(client.player).toHaveBeenCalledExactlyOnceWith('key', 'demo-player-key-for-paste');
+  expect(field.value).toBe('');
+});
+
 describe('Phone sign-in handoff', () => {
   it('renders a locally generated QR, exact redirect and certificate, and removes it on cancellation', async () => {
     const client = previewClient(false); const state = await client.snapshot();
