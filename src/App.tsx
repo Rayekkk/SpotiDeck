@@ -7,6 +7,7 @@ import type { AudioState, Client, Connection, Device, LibraryKind, Media, MediaK
 import QRCode from 'qrcode';
 import { styles } from './style';
 import { balanceVolumes } from './audio';
+import { UpdateSection } from './updates';
 
 type Route = 'main' | 'playlists' | 'albums' | 'search' | 'more' | 'collection' | 'queue' | 'devices' | 'settings' | 'library' | 'browse' | 'actions' | 'add-playlist' | 'create-playlist' | 'timer';
 type Run = (task: () => Promise<unknown>, done?: () => void) => Promise<void>;
@@ -486,5 +487,6 @@ function Settings({ snapshot, client, run, busy, onDisconnect, setAudioMode }: {
       {snapshot.player.running && <p>Select “SpotiDeck” in the Spotify app once to pair. The plugin then selects its local player automatically.</p>}
       {snapshot.player.installed && <Action label="Update player" className="sp-small-link" disabled={busy || snapshot.player.running} onClick={() => void run(() => client.player('install'))}>Update player from Spotify</Action>}
       <p>Soloist builds expire after 90 days. Stop the player and update it here when needed.</p></>}{snapshot.player.error && <p role="alert">{snapshot.player.error}</p>}</section>
+    <div className="sp-divider"/><UpdateSection client={client}/>
     <p className="sp-note">SpotiDeck · 1.0.0<br/>Independent plugin. Not affiliated with Spotify.</p></div>;
 }

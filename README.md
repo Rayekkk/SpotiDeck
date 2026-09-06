@@ -36,6 +36,7 @@ Play your music, browse playlists and adjust the mix without leaving Gaming Mode
 | **Live player state** | Local Soloist events update playback state; bounded reconnect and process recovery handle interruptions |
 | **Startup recovery** | Retry a previously paired player that started before the network was ready, without automatically playing music |
 | **Saved preferences** | Retains the volume mode and balance position across plugin restarts |
+| **Plugin updates** | Check GitHub for a newer release and download its verified installation ZIP to your Downloads folder |
 
 ---
 
@@ -226,6 +227,23 @@ application's own volume.
 Closing QAM keeps music and the local mixer running. Unloading the plugin stops its
 local player and restores the audio streams it still controls. Saved preferences remain
 available on the next load.
+
+---
+
+## Plugin updates
+
+Open **More → Settings → Plugin updates** and choose **Check for updates**. The plugin
+compares its installed version with the latest stable release in this repository.
+If a newer version has a verified installation ZIP, choose **Download VERSION**.
+
+The ZIP is saved to the handheld user's Downloads folder; the panel shows its full path.
+Install it through **Decky Settings → Developer → Install Plugin from ZIP**. Checking and
+downloading do not restart playback or replace the running plugin automatically.
+
+Release downloads verify GitHub's SHA-256 digest, size, plugin identity and version before
+publishing the completed file. Checks run only when requested. If no release has been
+published yet, the panel says so. These controls update SpotiDeck; **Update player from
+Spotify** separately updates the Soloist audio engine.
 
 ---
 

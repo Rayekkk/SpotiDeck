@@ -38,6 +38,35 @@ class PluginLifecycleTests(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(result["data"]["connected"])
         self.assertIsNone(result["data"]["playback"])
 
+    async def test_updates_work_without_spotify_and_do_not_block_snapshot(self):
+        import threading
+        started, release = threading.Event(), threading.Event()
+        def slow_check():
+            started.set()
+            release.wait(2)
+            return {"success": True, "no_release": True}
+        with patch.object(self.plugin.updates, "check", side_effect=slow_check):
+            pending = asyncio.create_task(self.plugin.dispatch("updates_check", {}))
+            try:
+                self.assertTrue(await asyncio.to_thread(started.wait, 1))
+                snapshot = await asyncio.wait_for(self.plugin.dispatch("snapshot", {}), 0.2)
+                self.assertTrue(snapshot["ok"])
+                self.assertFalse(snapshot["data"]["connected"])
+            finally:
+                release.set()
+            self.assertTrue((await pending)["data"]["no_release"])
+
+    async def test_update_download_version_is_validated_and_unload_closes_updater(self):
+        with patch.object(self.plugin.updates, "_metadata") as metadata:
+            result = await self.plugin.dispatch("updates_download", {"version": "../bad"})
+            self.assertTrue(result["ok"])
+            self.assertFalse(result["data"]["success"])
+            metadata.assert_not_called()
+        updater = self.plugin.updates
+        await self.plugin._unload()
+        self.assertTrue(updater._closed.is_set())
+        self.assertFalse((await self.plugin.dispatch("updates_check", {}))["ok"])
+
     async def test_snapshot_rpc_keeps_local_panel_available_while_spotify_is_slow(self):
         service = self.plugin.service
         service.spotify.store.update(refresh_token="test-refresh")

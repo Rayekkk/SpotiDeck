@@ -36,6 +36,8 @@ export interface Snapshot {
   pins?: string[]; searchHistory?: string[]; sleepTimer?: SleepTimer; needsReauthorization?: boolean;
 }
 export interface Client {
+  updatesCheck(): Promise<UpdateCheck>;
+  updatesDownload(version: string): Promise<UpdateDownload>;
   snapshot(): Promise<Snapshot>;
   library(kind: LibraryKind, offset?: PageOffset): Promise<Page>;
   search(query: string, kind: MediaKind, offset?: PageOffset): Promise<Page>;
@@ -53,4 +55,13 @@ export interface Client {
   disconnect(): Promise<void>;
   player(action: 'install' | 'start' | 'stop' | 'key', key?: string): Promise<void>;
   audio(action: 'mode' | 'other' | 'balance', value: string | number): Promise<void>;
+}
+
+export interface UpdateCheck {
+  success: boolean; current_version: string; latest_version?: string;
+  update_available: boolean; download_available: boolean; no_release?: boolean;
+  release_url?: string; asset_name?: string; size?: number; checked_at?: number; error?: string;
+}
+export interface UpdateDownload {
+  success: boolean; path?: string; version?: string; sha256?: string; error?: string;
 }

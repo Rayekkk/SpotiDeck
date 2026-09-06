@@ -14,6 +14,8 @@ async function request<T>(method: string, args: Record<string, unknown> = {}): P
   return result.data as T;
 }
 export const client: Client = {
+  updatesCheck: () => request('updates_check'),
+  updatesDownload: version => request('updates_download', { version }),
   snapshot: () => request('snapshot'),
   library: (kind, offset = 0) => request('library', { kind, offset }),
   search: (query, kind, offset = 0) => request('search', { query, kind, offset }),

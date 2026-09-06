@@ -1,3 +1,4 @@
+import asyncio
 import os
 import sys
 from pathlib import Path
@@ -14,10 +15,12 @@ from backend.audio import AudioMixer
 from backend.service import Service
 from backend.spotify import Spotify, SpotifyError
 from backend.storage import Store
+from backend.updates import PluginUpdates
 
 
 class Plugin:
     service = None
+    updates = None
     startup_error = None
     closing = False
 
@@ -25,6 +28,9 @@ class Plugin:
         self.startup_error = None
         self.service = None
         try:
+            if self.updates:
+                self.updates.close()
+            self.updates = PluginUpdates.for_plugin(PLUGIN_ROOT)
             directory = getattr(decky, "DECKY_PLUGIN_SETTINGS_DIR", None) or os.environ.get("DECKY_PLUGIN_SETTINGS_DIR")
             if not directory:
                 raise ValueError("Decky did not provide a settings directory.")
@@ -60,7 +66,11 @@ class Plugin:
             return {"ok": False, "error": "Invalid request.", "code": "invalid", "retry_after": 0}
         service = self.service
         try:
-            if method == "snapshot":
+            if method == "updates_check":
+                data = await asyncio.to_thread(self.updates.check)
+            elif method == "updates_download":
+                data = await asyncio.to_thread(self.updates.download, args.get("version"))
+            elif method == "snapshot":
                 data = await service.quick_snapshot()
             elif method == "library":
                 data = await service.library(args.get("kind"), args.get("offset", 0))
@@ -128,6 +138,8 @@ class Plugin:
 
     async def _unload(self):
         self.closing = True
+        if self.updates:
+            self.updates.close()
         if self.service:
             await self.service.cancel_device_selection()
             await self.service.cancel_auto_select()

@@ -2,6 +2,10 @@
 
 ## 1.0.0 - initial release
 
+- Add manual GitHub release checks and verified ZIP downloads in Settings, following
+  Legion Go 2 Companion's update flow. Save downloads to the user's Downloads folder
+  for installation through Decky, with digest, archive and version validation.
+
 - Fix single-click device selection with automatic confirmation, stale-read protection,
   local activation and an explicit destination for sessions with no current song.
 - Apply saved balance before Soloist can produce audio and after automatic selection,
@@ -65,6 +69,6 @@
   profile and playlists with artwork through the production backend.
 - Install official Soloist through the live Decky RPC over verified HTTPS; confirm
   version 1.3.8.17, build 20260906, successful `--version` execution and resolved libraries.
-- Pass 283 backend tests on the handheld's system Python 3.14, plus 68 local UI
+- Pass 320 backend tests on the handheld's system Python 3.14, plus 74 local UI
   tests, type checking and the production build.
 - Confirm A/B/D-pad navigation and audible game/Spotify balance with the device owner.
