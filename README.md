@@ -1,7 +1,4 @@
 <div align="center">
-
-<h1>SpotiDeck</h1>
-
 <img src="SpotiDeck.png" alt="SpotiDeck - Spotify player for Decky" width="800">
 
 [![Version](https://img.shields.io/badge/version-1.0.0-1DB954?style=for-the-badge&labelColor=141417)](CHANGELOG.md)
