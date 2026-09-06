@@ -2,6 +2,10 @@
 
 ## 1.0.0 - initial release
 
+- Fix game volume control on AYANEO 3 by excluding internal ALSA loopback streams
+  and tolerating unrelated PipeWire registry misses while verifying applied gains.
+  Validate both slider modes on the running game and pass 325 backend tests on AYANEO.
+
 - Add manual GitHub release checks and verified ZIP downloads in Settings, following
   Legion Go 2 Companion's update flow. Save downloads to the user's Downloads folder
   for installation through Decky, with digest, archive and version validation.

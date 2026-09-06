@@ -6,6 +6,7 @@ import json
 import math
 import os
 import platform
+import re
 import shutil
 
 from .player import player_environment
@@ -14,6 +15,13 @@ from .spotify import SpotifyError
 MAX_RECORDS = 64
 MAX_LEDGER_BYTES = 24576
 POLL_SECONDS = 1.0
+
+# pw-cli 1.6 can report failed registry bindings for internal ALSA nodes even
+# when a command to an application stream succeeds. The addressed stream is
+# independently read back by _write; all other errors remain fatal.
+_REGISTRY_MISS = re.compile(
+    rb'remote \d+: error id:\d+ seq:\d+ res:-2 \(No such file or directory\): '
+    rb'(?:no global \d+|unknown resource \d+ op:\d+)')
 
 
 def _integer(value, maximum=2 ** 64 - 1):
@@ -83,6 +91,11 @@ def parse_snapshot(objects, owned_pid=None):
         info = item.get('info') or {}
         props = info.get('props') or {}
         if props.get('media.class') != 'Stream/Output/Audio':
+            continue
+        # These carry the mixed hardware output, including Spotify. They are
+        # infrastructure, not application streams, and may not be addressable.
+        if (props.get('alsa.loopback') in (True, 'true') or
+                str(props.get('node.name') or '').startswith('alsa_loopback_stream.')):
             continue
         client = clients.get(_integer(props.get('client.id')), {})
         if _spotify(props, client, owned_pid):
@@ -179,7 +192,9 @@ class AudioMixer:
                 stdin=asyncio.subprocess.DEVNULL, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
             output, errors, code = await asyncio.wait_for(asyncio.gather(
                 read_limited(process.stdout, 8 * 1024 * 1024), read_limited(process.stderr, 65536), process.wait()), 4)
-            if code or (args[0] == 'pw-cli' and b'error' in errors.lower()):
+            command_errors = b'\n'.join(line for line in errors.splitlines()
+                                        if not _REGISTRY_MISS.fullmatch(line.strip()))
+            if code or (args[0] == 'pw-cli' and b'error' in command_errors.lower()):
                 raise SpotifyError('PipeWire could not change an audio stream. Retry after the application starts playing.', 'audio')
             return output
         except (OSError, asyncio.TimeoutError):

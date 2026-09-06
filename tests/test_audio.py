@@ -3,7 +3,7 @@ import copy
 import json
 import tempfile
 import unittest
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 from backend.audio import AudioMixer, parse_snapshot
 from backend.spotify import SpotifyError
@@ -83,6 +83,16 @@ class AudioTests(unittest.IsolatedAsyncioTestCase):
         await self.mixer.close()
         self.assertEqual(self.graph.writes, [])
         self.assertEqual(self.store.path.read_bytes(), before)
+
+    async def test_successful_cli_exit_without_actual_gain_change_is_rejected(self):
+        async def ignored_write(*args):
+            if args[0] == 'pw-dump':
+                return await self.graph.run(*args)
+            return b''
+        self.mixer._run = ignored_write
+        with self.assertRaisesRegex(SpotifyError, 'did not accept'):
+            await self.mixer.set_volume(50)
+        self.assertEqual(self.graph.values(), [1, 0.5])
 
     async def test_preserves_balance_original_gain_and_unrelated_properties(self):
         props = self.graph.objects[1]['info']['params']['Props'][0]
@@ -313,6 +323,17 @@ class AudioTests(unittest.IsolatedAsyncioTestCase):
 
 
 class AudioParsingTests(unittest.TestCase):
+    def test_internal_alsa_output_is_not_an_application_stream(self):
+        for props in ({'alsa.loopback': True}, {'alsa.loopback': 'true'},
+                      {'node.name': 'alsa_loopback_stream.alsa_output.speakers'}):
+            graph = Graph(stream(), stream(70, 228, name='Internal ALSA', **props),
+                          stream(120, 292, name='Spotify'))
+            self.assertEqual([n['id'] for n in parse_snapshot(graph.objects)[1].values()], [10])
+
+    def test_regular_virtual_application_stream_is_still_controlled(self):
+        graph = Graph(stream(**{'node.virtual': True, 'alsa.loopback': False}))
+        self.assertEqual(len(parse_snapshot(graph.objects)[1]), 1)
+
     def test_invalid_graph_or_missing_session_is_rejected(self):
         for value in ({}, [], [stream()]):
             with self.assertRaises(SpotifyError):
@@ -327,6 +348,31 @@ class AudioParsingTests(unittest.TestCase):
         self.assertEqual(AudioMixer._load_records('bad'), [])
         self.assertEqual(AudioMixer._load_records([{}] * 65), [])
         self.assertEqual(AudioMixer._load_records([{'base': [1], 'last': [0], 'fingerprint': 'x' * 64}]), [])
+
+
+class AudioCommandTests(unittest.IsolatedAsyncioTestCase):
+    async def run_command(self, stderr, code=0):
+        process = AsyncMock()
+        process.stdout.read.side_effect = [b'accepted', b'']
+        process.stderr.read.side_effect = [stderr, b'']
+        process.wait.return_value = code
+        process.returncode = code
+        with patch('backend.audio.asyncio.create_subprocess_exec', return_value=process):
+            return await AudioMixer._run(object(), 'pw-cli', 'set-param', '91', 'Props', '{}')
+
+    async def test_unrelated_internal_registry_misses_allow_stream_readback(self):
+        errors = (b'remote 0: error id:56 seq:110 res:-2 (No such file or directory): no global 70\n'
+                  b'remote 0: error id:0 seq:202 res:-2 (No such file or directory): unknown resource 56 op:7\n')
+        self.assertEqual(await self.run_command(errors), b'accepted')
+
+    async def test_actual_command_errors_and_nonzero_exit_still_fail(self):
+        for error, code in (
+            (b'Error: "set-param: unknown global \'91\'"\n', 0),
+            (b'remote 0: error id:56 seq:110 res:-13 (Permission denied): set param\n', 0),
+            (b'', 1),
+        ):
+            with self.subTest(error=error, code=code), self.assertRaises(SpotifyError):
+                await self.run_command(error, code)
 
 
 if __name__ == '__main__':
