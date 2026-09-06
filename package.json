@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "A Spotify-inspired music experience for Decky Loader",
   "author": "Rayek",
-  "license": "MIT",
+  "license": "BSD-3-Clause",
   "type": "module",
   "private": true,
   "scripts": {

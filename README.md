@@ -1,10 +1,10 @@
 <div align="center">
 <img src="SpotiDeck.png" alt="SpotiDeck - Spotify player for Decky" width="800">
 
-[![Version](https://img.shields.io/badge/version-1.0.0-1DB954?style=for-the-badge&labelColor=141417)](CHANGELOG.md)
-[![Platform](https://img.shields.io/badge/platform-SteamOS-6E40C9?style=for-the-badge&labelColor=141417)](#requirements)
+[![Release](https://img.shields.io/github/v/release/Rayekkk/SpotiDeck?style=for-the-badge&label=release&color=C2410C&labelColor=141417)](https://github.com/Rayekkk/SpotiDeck/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/Rayekkk/SpotiDeck/total?style=for-the-badge&label=downloads&color=15803D&labelColor=141417)](https://github.com/Rayekkk/SpotiDeck/releases)
 [![Requires](https://img.shields.io/badge/requires-Decky_Loader-0969DA?style=for-the-badge&labelColor=141417)](https://decky.xyz)
-[![License](https://img.shields.io/badge/license-MIT-424A53?style=for-the-badge&labelColor=141417)](LICENSE)
+[![License](https://img.shields.io/github/license/Rayekkk/SpotiDeck?style=for-the-badge&label=license&color=424A53&labelColor=141417)](LICENSE)
 
 **Your Spotify library and game audio balance in one Steam overlay.**
 Play your music, browse playlists and adjust the mix without leaving Gaming Mode.
@@ -396,7 +396,7 @@ or endorsed by Spotify AB.
 
 ## License
 
-MIT - see [LICENSE](LICENSE). Bundled dependency notices and source information are listed
+BSD-3-Clause - see [LICENSE](LICENSE). Bundled dependency notices and source information are listed
 in [NOTICE](NOTICE). Spotify Soloist is downloaded separately and remains subject to
 Spotify's terms.
 
