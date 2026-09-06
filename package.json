@@ -1,0 +1,37 @@
+{
+  "name": "spotideck",
+  "version": "1.0.0",
+  "description": "A Spotify-inspired music experience for Decky Loader",
+  "author": "Rayek",
+  "license": "MIT",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "rollup -c",
+    "typecheck": "tsc --noEmit",
+    "dev": "vite --host 127.0.0.1",
+    "build:preview": "vite build",
+    "test": "python -m unittest discover -s tests -p test_*.py",
+    "test:ui": "vitest run",
+    "package": "python scripts/package.py"
+  },
+  "devDependencies": {
+    "@decky/api": "1.1.3",
+    "@decky/rollup": "1.0.2",
+    "@decky/ui": "4.12.0",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/qrcode": "^1.5.6",
+    "@types/react": "^19.1.1",
+    "@types/react-dom": "^19.1.1",
+    "@vitejs/plugin-react": "^4.7.0",
+    "jsdom": "^26.1.0",
+    "qrcode": "^1.5.4",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "rollup": "^4.0.0",
+    "typescript": "^5.9.2",
+    "vite": "^6.4.0",
+    "vitest": "^3.2.4"
+  }
+}

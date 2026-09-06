@@ -1,0 +1,24 @@
+SpotiDeck 1.0.0
+Copyright (c) 2026 Rayek. Original plugin code is licensed under MIT.
+
+The plugin bundles @decky/api 1.1.3, Copyright the SteamDeckHomebrew contributors,
+licensed under LGPL-2.1. Its source and license are included by the package script
+in THIRD_PARTY_SOURCES/decky-api-1.1.3 and THIRD_PARTY_LICENSES respectively.
+https://github.com/SteamDeckHomebrew/loader-api
+
+React, React DOM and @decky/ui are external to the production bundle and are
+provided by Steam/Decky. Development dependencies retain their own licenses.
+
+QR codes are generated locally using qrcode 1.5.4, Copyright (c) 2012 Ryan Day,
+and dijkstrajs 1.0.3, under MIT. Their license texts are included in
+THIRD_PARTY_LICENSES/qrcode-MIT.txt and dijkstrajs-MIT.txt.
+https://github.com/soldair/node-qrcode
+https://github.com/tcort/dijkstrajs
+
+Spotify Soloist is NOT included in this distribution. It is an optional download
+from Spotify's official servers on the user's device and is subject to Spotify's
+terms. Users generate their own Soloist API key.
+https://developer.spotify.com/documentation/soloist
+
+The Spotify name and logo identify the connected music service. This is an
+independent plugin, not affiliated with or endorsed by Spotify AB.
