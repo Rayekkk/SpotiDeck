@@ -67,6 +67,7 @@ class PlayerLifecycleTests(unittest.IsolatedAsyncioTestCase):
         self.player = Player(Store(Path(self.temp.name) / "settings"), Path(self.temp.name) / "runtime")
         self.player.supported = True
         self.player.RECOVERY_DELAYS = (0.01, 0.01, 0.01)
+        self.player.SELECTION_READY_TIMEOUT = 0.1
         self.player.binary.parent.mkdir(parents=True)
         self.player.binary.write_bytes(b"test-player")
         self.player.store.update(soloist_key="test-personal-key")
@@ -289,6 +290,49 @@ class PlayerLifecycleTests(unittest.IsolatedAsyncioTestCase):
         for value in ("SpotiDeck", "../other", "a" * 65, "1234"):
             path.write_text(value)
             self.assertIsNone(self.player.owned_device_id())
+
+    async def test_selection_restarts_enabled_player_and_waits_for_login(self):
+        self.player.store.update(player_enabled=True)
+        task = asyncio.create_task(self.player.activate_local())
+        await self.until(lambda: self.player.local is not None)
+        self.player.local.connected = self.player.local.logged_in = True
+        self.assertTrue((await task)['active'])
+        self.player.local.request.assert_not_awaited()
+        self.assertEqual(len(self.processes), 1)
+
+    async def test_selection_does_not_restart_explicitly_stopped_player(self):
+        await self.player.start()
+        await self.player.stop()
+        with self.assertRaises(SpotifyError):
+            await self.player.activate_local()
+        self.assertEqual(len(self.processes), 1)
+
+    async def test_selection_cancelled_while_waiting_cannot_activate(self):
+        await self.player.start()
+        allowed = True
+        local = self.player.local
+        task = asyncio.create_task(self.player.activate_local(allowed=lambda: allowed))
+        await asyncio.sleep(0)
+        allowed = False
+        local.connected = local.logged_in = True
+        with self.assertRaises(SpotifyError):
+            await task
+        local.activate.assert_not_awaited()
+
+    async def test_start_retires_orphan_before_removing_discovery_files(self):
+        state = self.player.directory / 'session'
+        state.mkdir(parents=True)
+        (state / 'soloist.pid').write_text('123456')
+        (state / 'ws.port').write_text('43210')
+        async def retire(binary, session, pid):
+            self.assertEqual(pid, '123456')
+            self.assertEqual((session / 'ws.port').read_text(), '43210')
+            raise SpotifyError('Previous owner is still live', 'player')
+        with patch('backend.player.retire_orphan', side_effect=retire):
+            with self.assertRaises(SpotifyError):
+                await self.player.start()
+        self.assertEqual(self.processes, [])
+        self.assertTrue((state / 'ws.port').exists())
 
     async def test_successful_owned_login_persists_pairing_once(self):
         await self.player.start()

@@ -163,7 +163,7 @@ class PluginLifecycleTests(unittest.IsolatedAsyncioTestCase):
         self.plugin.service.player.stop = AsyncMock()
 
     async def test_stop_only_terminates_the_process_it_started(self):
-        player = self.plugin.service.player
+        player = self.plugin.service.player.soloist
         fake = types.SimpleNamespace(returncode=None, terminate=lambda: None, kill=lambda: None, wait=AsyncMock(return_value=0))
         with patch.object(fake, "terminate") as terminate, patch.object(fake, "kill") as kill:
             player.process = fake
@@ -173,7 +173,7 @@ class PluginLifecycleTests(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(player.status()["running"])
 
     async def test_player_starts_as_spotideck_and_reuses_saved_pairing(self):
-        player = self.plugin.service.player
+        player = self.plugin.service.player.soloist
         player.supported = True
         player.binary.parent.mkdir(parents=True)
         player.binary.write_bytes(b"fake-player-executable")
@@ -197,7 +197,7 @@ class PluginLifecycleTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(player.status()["running"])
 
     async def test_key_cannot_change_while_player_is_running(self):
-        player = self.plugin.service.player
+        player = self.plugin.service.player.soloist
         player.process = types.SimpleNamespace(returncode=None)
         try:
             with self.assertRaises(SpotifyError):

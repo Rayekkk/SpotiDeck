@@ -32,8 +32,8 @@ Play your music, browse playlists and adjust the mix without leaving Gaming Mode
 | **Separate audio controls** | Adjust Spotify and all other handheld audio independently |
 | **Game / Spotify balance** | One slider with both sources at full volume in the centre; moving either way lowers only the opposite source |
 | **Controller navigation** | Native Decky controls with A to select, B to return and X to queue supported track rows |
-| **Local playback** | Optional Spotify Soloist player keeps music playing when QAM closes or a game starts |
-| **Live player state** | Local Soloist events update playback state; bounded reconnect and process recovery handle interruptions |
+| **Local playback** | Choose Spotify Soloist or the Spotify Flatpak app in Settings; keep the same controller-friendly QAM |
+| **Live player state** | Local Soloist events or Spotify desktop's MPRIS interface update playback state |
 | **Startup recovery** | Retry a previously paired player that started before the network was ready, without automatically playing music |
 | **Saved preferences** | Retains the volume mode and balance position across plugin restarts |
 | **Plugin updates** | Check GitHub for a newer release and download its verified installation ZIP to your Downloads folder |
@@ -48,7 +48,7 @@ Play your music, browse playlists and adjust the mix without leaving Gaming Mode
 | Tested handheld | Lenovo Legion Go 2 on **SteamOS 3.10** and **Decky Loader 3.2.8** |
 | Spotify account | Spotify Premium and an internet connection |
 | Account connection | Your own Spotify Web API app **Client ID** |
-| Local playback | Your own **Spotify Soloist API key**; the plugin installer supports Linux x86_64 and AArch64 |
+| Local playback | **Soloist:** your own API key, Linux x86_64 or AArch64. **Spotify Flatpak:** `com.spotify.Client`, `busctl` and a signed-in desktop app |
 | Other audio / Balance | PipeWire with `pw-dump` and `pw-cli`; Balance also requires a Spotify device with remote volume control |
 
 The player and mixer have been exercised in the real Legion Go 2 QAM. The device owner
@@ -98,6 +98,30 @@ Python caches and the Soloist executable are excluded.
 ---
 
 ## Spotify setup
+
+**Soloist is the default and recommended player.** Both players provide responsive
+playback controls. In our Legion Go 2 tests, Soloist used much less memory and less
+power; the difference depends on the device and playback settings. Spotify (Flatpak)
+is an optional alternative for using the full desktop app and its downloads.
+An explicitly selected player is preserved across restarts and plugin updates.
+
+### Alternative player: Spotify Flatpak
+
+1. Install **Spotify** (`com.spotify.Client`) from Discover in Desktop mode and sign in
+   with the same Spotify account connected to SpotiDeck.
+2. In **More → Settings → Listen on this handheld**, select **Spotify (Flatpak)**.
+3. Use **Open Spotify** to manage the app. Choose this computer in Spotify and play a
+   song once; SpotiDeck links the Connect device after verifying local playback.
+4. Return to the game. Play/pause, skipping, seeking, volume and balance are available
+   in QAM. Search, playlists and queue operations continue to use Spotify's Web API.
+
+Downloads and audio quality are managed in the Spotify app. Downloaded content can
+play offline; SpotiDeck's online catalog and queue do not become an offline library.
+Closing QAM keeps Spotify running; **Stop Spotify** or switching to Soloist closes it.
+Selecting Soloist again preserves its saved key and pairing. The Flatpak package is
+maintained by the Flathub community, independently of Spotify.
+
+### Soloist setup
 
 There are two separate credentials:
 

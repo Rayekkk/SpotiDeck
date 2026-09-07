@@ -37,6 +37,9 @@ class Service(Catalog):
 
     def __init__(self, spotify, player, mixer=None):
         self.spotify, self.player = spotify, player
+        bind = getattr(player, "bind_spotify", None)
+        if callable(bind):
+            bind(spotify)
         self.mixer = mixer
         self.audio_lock = asyncio.Lock()
         self.cache = OrderedDict()
@@ -67,8 +70,14 @@ class Service(Catalog):
         self._auto_select_error = None
         self._cloud_ready_at = None
 
+    @property
+    def local_device(self):
+        return getattr(self.player, "local_device", LOCAL_DEVICE)
+
     def start_auto_select(self):
         """One startup attempt, independent of whether the QAM has been opened."""
+        if self.player.status().get("engine") == "flatpak" and not self.player.owned_device_id():
+            return  # First link requires actual desktop playback, not a guessed device name.
         if self._closed or not callable(getattr(self.player, "activate_local", None)):
             return
         if self._auto_select_task and not self._auto_select_task.done():
@@ -197,7 +206,7 @@ class Service(Catalog):
     async def _balance_volume(self, state, value, remember=True):
         """A transaction and its rollback always address the same device."""
         active = state["device"]
-        if state.get("source") == "soloist":
+        if state.get("source") in ("soloist", "flatpak"):
             await self.player.local_command("volume", value)
         else:
             await self.spotify.request("PUT", "/me/player/volume",
@@ -484,7 +493,7 @@ class Service(Catalog):
                 self.cache.pop("devices", None)
 
     async def _select_device(self, value):
-        if not isinstance(value, str) or (value != LOCAL_DEVICE and not re.fullmatch(r"[a-zA-Z0-9_-]{1,128}", value)):
+        if not isinstance(value, str) or (value != self.local_device and not re.fullmatch(r"[a-zA-Z0-9_-]{1,128}", value)):
             raise SpotifyError("Invalid playback device.")
         selected = next((item for item in await self.devices() if item["id"] == value), None)
         if not selected or selected["restricted"]:
@@ -497,7 +506,7 @@ class Service(Catalog):
         await self.cancel_device_selection()
         epoch = self.spotify.epoch
         owned_id = self.player.owned_device_id() if callable(getattr(self.player, "owned_device_id", None)) else None
-        local = value in (owned_id, LOCAL_DEVICE) and callable(getattr(self.player, "activate_local", None))
+        local = value in (owned_id, self.local_device) and callable(getattr(self.player, "activate_local", None))
         if local:
             await self.player.activate_local(allowed=lambda: not self._closed and epoch == self.spotify.epoch)
         else:
@@ -507,7 +516,7 @@ class Service(Catalog):
         self._local_blocked = not local
         self._local_transfer_target = None if local else (epoch, self.generation, value)
         if local:
-            self._local_device_id = owned_id or LOCAL_DEVICE
+            self._local_device_id = owned_id or self.local_device
         selection = {"device": selected, "pending": True, "error": None, "epoch": epoch, "until": time.monotonic() + 20}
         self._device_selection = selection
         if self.audio_status()["mode"] == "balance":
@@ -523,6 +532,9 @@ class Service(Catalog):
         self._device_selection_task = asyncio.create_task(self._wait_device_selection(selection))
 
     def _owned_playback(self, remote=None, fresh=False):
+        observer = getattr(self.player, "observe_remote", None)
+        if fresh and callable(observer):
+            observer(remote)
         if self._selected_empty_playback():
             return None
         getter = getattr(self.player, "local_snapshot", None)
@@ -533,17 +545,17 @@ class Service(Catalog):
             self._local_transfer_target = None
             self._local_pause_revision = None
             cached = self.cache.get("playback")
-            if cached and (cached[1] or {}).get("source") == "soloist":
+            if cached and (cached[1] or {}).get("source") in ("soloist", "flatpak"):
                 self.cache.pop("playback", None)
             return None
         if remote is None:
             cached = self.cache.get("playback")
             remote = cached[1] if cached else None
-        # An owned active WebSocket is the authority. Associate its Connect ID
+        # The owned active local player is the authority. Associate its Connect ID
         # only when API track and device both match, never merely by name.
         active = (remote or {}).get("device") or {}
         local_uri = (data.get("item") or {}).get("uri")
-        matches = (active.get("id") not in (None, LOCAL_DEVICE) and active.get("active") is True and
+        matches = (active.get("id") not in (None, self.local_device) and active.get("active") is True and
                    active.get("name") == data.get("device_name") and local_uri and
                    ((remote or {}).get("track") or {}).get("uri") == local_uri)
         if self._local_blocked:
@@ -558,12 +570,12 @@ class Service(Catalog):
             self._local_transfer_target = None
         if matches:
             self._local_device_id = active.get("id")
-        state = local_playback(data, self._local_device_id or LOCAL_DEVICE)
+        state = local_playback(data, self._local_device_id or self.local_device)
         pending = self.accepted_playback
         if (pending and pending["epoch"] == self.spotify.epoch and pending["until"] > time.monotonic() and
-                self._local_pause_revision == data.get("revision") and pending["state"].get("source") == "soloist"):
+                self._local_pause_revision == data.get("revision") and pending["state"].get("source") in ("soloist", "flatpak")):
             return pending["state"]
-        if pending and pending["state"].get("source") == "soloist":
+        if pending and pending["state"].get("source") in ("soloist", "flatpak"):
             self.accepted_playback = None
         return state
 
@@ -667,7 +679,7 @@ class Service(Catalog):
     def _schedule_quick_balance(self, state, identity):
         active = (state or {}).get("device")
         if (self._auto_select_task and not self._auto_select_task.done() and
-                (state or {}).get("source") != "soloist"):
+                (state or {}).get("source") not in ("soloist", "flatpak")):
             return  # Startup is still moving away from the previous receiver.
         if ((state or {}).get("source") == "selection" or not self._quick_current(identity) or not active or self.audio_status()["mode"] != "balance" or
                 self.balance_target == (self.spotify.epoch, active["id"]) or
@@ -734,7 +746,7 @@ class Service(Catalog):
         result["retryAfter"] = max(0, math.ceil(retry_at - time.monotonic()))
         if local:
             result.update(playbackPending=False, refreshing=False, playbackError=None, retryAfter=0)
-        elif (result["playback"] or {}).get("source") == "soloist":
+        elif (result["playback"] or {}).get("source") in ("soloist", "flatpak"):
             result.update(playback=None, playbackPending=True, refreshing=True)
             self._schedule_quick_read("playback", self._playback_load, 10)
         return result
@@ -772,13 +784,14 @@ class Service(Catalog):
                 raise
             values = []
         if local_ready:
-            local_id = own or LOCAL_DEVICE
+            local_id = own or self.local_device
             found = next((item for item in values if item["id"] == local_id), None)
             active = bool(getattr(self.player, "local_active", False)) and not self._local_blocked
             if found:
                 found["active"] = active
             else:
-                values.insert(0, {"id": local_id, "name": "SpotiDeck", "type": "Computer", "active": active,
+                name = getattr(self.player, 'device_name', 'Spotify (Flatpak)') if self.local_device == 'local:flatpak' else 'SpotiDeck'
+                values.insert(0, {"id": local_id, "name": name, "type": "Computer", "active": active,
                                   "restricted": False, "volume": None, "supportsVolume": True})
         selection = self.device_selection_status()
         if selection and not selection["pending"] and not selection["error"]:
@@ -828,7 +841,7 @@ class Service(Catalog):
             active = state.get("device") if state else None
             if not active or active["restricted"]:
                 raise SpotifyError("Choose an available playback device first.", "no_device")
-            if active["id"] != LOCAL_DEVICE:
+            if active["id"] != self.local_device:
                 params["device_id"] = active["id"]
             if command in ("pause", "resume", "next", "previous"):
                 path += {"pause": "pause", "resume": "play", "next": "next", "previous": "previous"}[command]
@@ -857,7 +870,7 @@ class Service(Catalog):
         started_at = int(time.time() * 1000)
         self._check_epoch(epoch)
         used_local = False
-        if command not in ("transfer", "save", "unsave") and state.get("source") == "soloist":
+        if command not in ("transfer", "save", "unsave") and state.get("source") in ("soloist", "flatpak"):
             local_command, local_value = ("play", None) if command == "resume" else (command, value)
             try:
                 await self.player.local_command(local_command, local_value)
@@ -865,13 +878,13 @@ class Service(Catalog):
             except SpotifyError as error:
                 if error.code != "local_unavailable":
                     raise  # Never replay an unconfirmed local write through the cloud.
-                if active["id"] == LOCAL_DEVICE:
+                if active["id"] == self.local_device:
                     if not getattr(self.player, "local_active", False):
                         raise
                     remote = await self._remote_playback()
                     mapped = self._owned_playback(remote)
                     mapped_id = ((mapped or {}).get("device") or {}).get("id")
-                    if mapped_id in (None, LOCAL_DEVICE):
+                    if mapped_id in (None, self.local_device):
                         raise SpotifyError("Spotify has not identified the local playback device yet. Refresh playback and retry.", "no_device")
                     params["device_id"] = mapped_id
         if not used_local:

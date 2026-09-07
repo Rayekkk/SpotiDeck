@@ -10,7 +10,7 @@ PLUGIN_ROOT = str(Path(__file__).resolve().parent)
 if PLUGIN_ROOT not in sys.path:
     sys.path.insert(0, PLUGIN_ROOT)
 
-from backend.player import Player
+from backend.player_router import Player
 from backend.audio import AudioMixer
 from backend.service import Service
 from backend.spotify import Spotify, SpotifyError
@@ -37,6 +37,7 @@ class Plugin:
             runtime = getattr(decky, "DECKY_PLUGIN_RUNTIME_DIR", None) or os.environ.get("DECKY_PLUGIN_RUNTIME_DIR") or str(Path(directory) / "runtime")
             store = Store(directory)
             player = Player(store, runtime)
+            await player.initialize()
             mixer = AudioMixer(store, owned_player_pid=lambda: getattr(player.process, "pid", None))
             self.service = Service(Spotify(store), player, mixer)
             await mixer.start()
@@ -123,6 +124,21 @@ class Plugin:
                     await service.player.stop()
                 elif action == "key":
                     await service.player.save_key(args.get("key"))
+                elif action == "engine":
+                    await service.cancel_device_selection()
+                    await service.cancel_auto_select()
+                    async with service.command_lock:
+                        await service.player.set_engine(args.get("key"))
+                        service.invalidate()
+                        service._local_device_id = None
+                        service._local_blocked = False
+                        service._local_transfer_target = None
+                        service.balance_target = None
+                        service.balance_transfer = None
+                    if service.player.status().get("running"):
+                        service.start_auto_select()
+                elif action == "open":
+                    await service.player.open_app()
                 else:
                     raise SpotifyError("Unknown player action.")
                 data = None

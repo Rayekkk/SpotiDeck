@@ -31,7 +31,7 @@ export interface Snapshot {
   playback: Playback | null; playbackError: string | null;
   refreshing?: boolean; playbackPending?: boolean; retryAfter?: number;
   deviceSelection?: DeviceSelection | null;
-  player: { installed: boolean; running: boolean; hasKey: boolean; error: string | null; supported: boolean; wsConnected?: boolean; ready?: boolean; active?: boolean; recovering?: boolean; selecting?: boolean; selectionError?: string | null };
+  player: { engine?: 'soloist' | 'flatpak'; linked?: boolean; installed: boolean; running: boolean; hasKey: boolean; error: string | null; supported: boolean; wsConnected?: boolean; ready?: boolean; active?: boolean; recovering?: boolean; selecting?: boolean; selectionError?: string | null };
   audio: AudioState;
   pins?: string[]; searchHistory?: string[]; sleepTimer?: SleepTimer; needsReauthorization?: boolean;
 }
@@ -53,7 +53,7 @@ export interface Client {
   connect(clientId: string, mode?: 'handheld' | 'phone'): Promise<Connection>;
   cancelConnect(): Promise<void>;
   disconnect(): Promise<void>;
-  player(action: 'install' | 'start' | 'stop' | 'key', key?: string): Promise<void>;
+  player(action: 'install' | 'start' | 'stop' | 'key' | 'engine' | 'open', key?: string): Promise<void>;
   audio(action: 'mode' | 'other' | 'balance', value: string | number): Promise<void>;
 }
 

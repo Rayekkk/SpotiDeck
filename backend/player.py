@@ -14,6 +14,7 @@ from pathlib import Path
 from .network import https_opener, is_certificate_error
 from .spotify import NoRedirect, SpotifyError
 from .soloist import SoloistClient, command_messages
+from .process_owner import retire_orphan
 
 DOWNLOADS = {
     "x86_64": "https://soloist-builds.spotifycdn.com/soloist_release_x86_64.tar.gz",
@@ -94,6 +95,7 @@ class Player:
     RECOVERY_DELAYS = (1, 3, 10)
     LOGIN_GRACE = 15
     LOGIN_RESTART_LIMIT = 2
+    SELECTION_READY_TIMEOUT = 8
 
     def status(self):
         return {"installed": self.binary.is_file() and not self.binary.is_symlink(),
@@ -136,6 +138,12 @@ class Player:
     async def activate_local(self, *, allowed=None):
         """Explicitly select this owned Soloist receiver without sending play."""
         async with self.local_control_lock:
+            if allowed is not None and not allowed():
+                raise SpotifyError("Local device selection was cancelled.", "local_cancelled")
+            # Reloads or a temporary disconnection must not require a separate
+            # trip to Settings. Respect an explicit Stop and never send play.
+            if self.store.data.get("player_enabled") is True:
+                await self.start(persist=False)
             local, process = self.local, self.process
             generation = self._generation
 
@@ -144,6 +152,10 @@ class Player:
                         and process.returncode is None and generation == self._generation
                         and (allowed is None or allowed()))
 
+            deadline = time.monotonic() + self.SELECTION_READY_TIMEOUT
+            while (local is not None and current_request() and
+                   (not local.connected or not local.logged_in) and time.monotonic() < deadline):
+                await asyncio.sleep(0.05)
             if local is None or not current_request() or not local.connected or not local.logged_in:
                 raise SpotifyError("The local player is not ready for device selection.", "local_unavailable")
             return await local.activate(allowed=current_request)
@@ -308,6 +320,9 @@ class Player:
                 await asyncio.gather(task, return_exceptions=True)
         self.monitor = self.stderr_task = None
         state, cache = self._session_directory("session"), self._session_directory("cache")
+        # A killed/reloaded Decky worker can leave Soloist holding the session
+        # lock. Retire that verified orphan before clearing its discovery files.
+        await retire_orphan(self.binary, state, self._runtime_text(state / "soloist.pid"))
         # Old runtime discovery must never attach us to a previous child/socket.
         for name in ("ws.addr", "ws.port"):
             path = state / name

@@ -48,4 +48,4 @@ def local_playback(data, device_id=LOCAL_DEVICE):
                        "type": "Computer", "active": True, "restricted": False,
                        "volume": volume, "supportsVolume": type(volume) in (int, float)},
             "disallows": disallows, "sourceTimestamp": data.get("received_at", now), "updatedAt": now,
-            "source": "soloist", "revision": data.get("revision", 0)}
+            "source": "flatpak" if data.get("source") == "flatpak" else "soloist", "revision": data.get("revision", 0)}

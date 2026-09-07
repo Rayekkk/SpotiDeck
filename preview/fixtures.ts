@@ -87,7 +87,7 @@ export function previewClient(connected = true): Client {
     async connect() { throw new Error('This is a visual preview. Connect your account in the installed Decky plugin.'); },
     async cancelConnect() { state.connecting = false; },
     async disconnect() { state.connected = false; state.playback = null; },
-    async player(action) { if (action === 'install') state.player.installed = true; if (action === 'key') state.player.hasKey = true; if (action === 'start') state.player.running = true; if (action === 'stop') state.player.running = false; },
+    async player(action, value) { if (action === 'engine') state.player.engine = value === 'flatpak' ? 'flatpak' : 'soloist'; if (action === 'install') state.player.installed = true; if (action === 'key') state.player.hasKey = true; if (action === 'start' || action === 'open') state.player.running = true; if (action === 'stop') state.player.running = false; },
     async audio(action, value) {
       if (action === 'mode') state.audio.mode = value as 'separate' | 'balance';
       if (action === 'other') state.audio.otherVolume = Number(value);

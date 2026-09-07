@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+- Replace the Spotify logo in Decky's plugin menu with SpotiDeck's own handheld/music icon.
+- Add Spotify Flatpak as an alternative playback engine, with local MPRIS controls,
+  desktop app launch/stop, verified Connect association and the existing audio balance.
+- Keep Soloist as the default and recommended player, with a resource-use explanation
+  beside the player selector and persistent explicit engine choices.
+- Close the Spotify Flatpak app when switching back to Soloist to release its resources.
+- Preserve Soloist configuration when changing engines; keep Spotify running when
+  QAM closes and manage downloads and quality through the desktop app.
+- Recover a verified orphaned Soloist process left by a Decky reload and wait for
+  local readiness when selecting the handheld again.
+
 ## 1.0.0 - initial release
 
 - Fix game volume control on AYANEO 3 by excluding internal ALSA loopback streams
