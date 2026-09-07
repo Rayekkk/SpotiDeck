@@ -214,7 +214,7 @@ class Player:
             archive = Path(temp) / "download.tar.gz"
             staged = Path(temp) / "soloist"
             try:
-                request = urllib.request.Request(DOWNLOADS[platform.machine()], headers={"User-Agent": "SpotiDeck/1.0.0"})
+                request = urllib.request.Request(DOWNLOADS[platform.machine()], headers={"User-Agent": "SpotiDeck/1.1.0"})
                 with https_opener(NoRedirect).open(request, timeout=30) as response, archive.open("wb") as output:
                     total = 0
                     while True:

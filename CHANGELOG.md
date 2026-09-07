@@ -1,17 +1,31 @@
 # Changelog
 
-## Unreleased
+## 1.1.0 - 2026-09-07
 
-- Replace the Spotify logo in Decky's plugin menu with SpotiDeck's own handheld/music icon.
-- Add Spotify Flatpak as an alternative playback engine, with local MPRIS controls,
-  desktop app launch/stop, verified Connect association and the existing audio balance.
-- Keep Soloist as the default and recommended player, with a resource-use explanation
-  beside the player selector and persistent explicit engine choices.
-- Close the Spotify Flatpak app when switching back to Soloist to release its resources.
-- Preserve Soloist configuration when changing engines; keep Spotify running when
-  QAM closes and manage downloads and quality through the desktop app.
-- Recover a verified orphaned Soloist process left by a Decky reload and wait for
-  local readiness when selecting the handheld again.
+### Added
+
+- Spotify Flatpak is available as an alternative local player in Settings. Play/pause, skipping, seeking, volume and game audio balance remain accessible from the same QAM interface.
+- Open or stop the Spotify app directly from the plugin. Use the desktop app to manage audio quality and downloads; SpotiDeck's search, library and queue still require an internet connection.
+
+### Changed
+
+- Soloist remains the default and recommended player, with an explanation of its lower memory and power use beside the player selector. Explicit player choices survive restarts, and switching engines preserves the Soloist key and pairing.
+- Switching from Flatpak back to Soloist closes the Spotify app to release its resources. Closing QAM alone keeps music playing.
+- The Decky plugin menu now uses SpotiDeck's own handheld/music icon instead of the Spotify logo.
+
+### Fixed
+
+- Returning to SpotiDeck after selecting another playback device starts an enabled Soloist player when needed and waits for it to become ready. An explicitly stopped player stays stopped, and device selection does not start music automatically.
+- Recover a Soloist process left behind by a Decky reload after verifying that it belongs to this plugin's private session, so it no longer blocks the new player from starting.
+
+### Internal
+
+- Verify the Flatpak media interface and local audio before linking its Spotify Connect device. Unconfirmed playback commands are not repeated through the Web API.
+- Added regression coverage for player selection, saved preferences, process ownership, desktop playback and command failures. Validation passed 358 backend tests on Linux, 76 frontend tests, type checking and the production build.
+
+### Install
+
+Download `SpotiDeck-1.1.0.zip`, then in Decky: gear icon, Developer, **Install Plugin from ZIP File**.
 
 ## 1.0.0 - initial release
 

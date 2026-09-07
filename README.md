@@ -59,12 +59,12 @@ confirmed A/B/D-pad navigation and audible game/Spotify balance during gameplay.
 ## Installation
 
 1. Install [Decky Loader](https://decky.xyz) if it is not already installed.
-2. Use a locally built plugin ZIP, or build one from the source directory below.
+2. Download **SpotiDeck-1.1.0.zip** from the [latest release](https://github.com/Rayekkk/SpotiDeck/releases/latest), or build it from source below.
 3. In Gaming Mode, open **Quick Access Menu → Decky → Settings → Developer**.
 4. Choose **Install Plugin from ZIP** and select the archive.
 5. Open the plugin and complete [Spotify setup](#spotify-setup).
 
-The package is `artifacts/SpotiDeck-1.0.0.zip`, containing one `SpotiDeck`
+The package is `artifacts/SpotiDeck-1.1.0.zip`, containing one `SpotiDeck`
 folder. Open **SpotiDeck** in the Decky menu after installation.
 
 For an existing installation of the earlier alpha named Spotify, use the

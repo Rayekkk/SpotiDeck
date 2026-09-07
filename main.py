@@ -50,7 +50,7 @@ class Plugin:
                 self.service.start_auto_select()
             # Warm playback once during startup; the panel never waits for network I/O.
             await self.service.quick_snapshot()
-            decky.logger.info("SpotiDeck 1.0.0 loaded (pid=%s uid=%s)", os.getpid(),
+            decky.logger.info("SpotiDeck 1.1.0 loaded (pid=%s uid=%s)", os.getpid(),
                               os.geteuid() if hasattr(os, "geteuid") else "unavailable")
         except Exception:
             self.startup_error = "SpotiDeck could not initialize its settings or local services. Check the plugin installation."

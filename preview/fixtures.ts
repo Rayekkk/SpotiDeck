@@ -63,7 +63,7 @@ export function previewClient(connected = true): Client {
     },
     async timer(minutes) { state.sleepTimer = { active: minutes > 0, endsAt: minutes ? Date.now() + minutes * 60000 : null, remaining: minutes * 60, error: null }; return copy(state.sleepTimer); },
     async preferences() { state.searchHistory = []; },
-    async updatesCheck() { return { success: true, current_version: '1.0.0', update_available: false, download_available: false, no_release: true }; },
+    async updatesCheck() { return { success: true, current_version: '1.1.0', update_available: false, download_available: false, no_release: true }; },
     async updatesDownload() { return { success: false, error: 'Downloads are available in the installed Decky plugin.' }; },
     async devices() { return copy(devices); }, async queue() { return copy(queue); },
     async command(command, value) {

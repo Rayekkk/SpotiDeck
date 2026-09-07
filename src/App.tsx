@@ -504,5 +504,5 @@ function Settings({ snapshot, client, run, busy, onDisconnect, setAudioMode }: {
       {snapshot.player.installed && <Action label="Update player" className="sp-small-link" disabled={busy || snapshot.player.running} onClick={() => void run(() => client.player('install'))}>Update player from Spotify</Action>}
       <p>Soloist builds expire after 90 days. Stop the player and update it here when needed.</p></>}{snapshot.player.error && <p role="alert">{snapshot.player.error}</p>}</section>
     <div className="sp-divider"/><UpdateSection client={client}/>
-    <p className="sp-note">SpotiDeck · 1.0.0<br/>Independent plugin. Not affiliated with Spotify.</p></div>;
+    <p className="sp-note">SpotiDeck · 1.1.0<br/>Independent plugin. Not affiliated with Spotify.</p></div>;
 }
