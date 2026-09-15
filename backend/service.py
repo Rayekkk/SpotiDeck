@@ -75,7 +75,7 @@ class Service(Catalog):
         return getattr(self.player, "local_device", LOCAL_DEVICE)
 
     def start_auto_select(self):
-        """One startup attempt, independent of whether the QAM has been opened."""
+        """Select the local receiver after the user explicitly starts its player."""
         if self.player.status().get("engine") == "flatpak" and not self.player.owned_device_id():
             return  # First link requires actual desktop playback, not a guessed device name.
         if self._closed or not callable(getattr(self.player, "activate_local", None)):

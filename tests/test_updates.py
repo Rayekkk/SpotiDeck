@@ -20,8 +20,8 @@ import zipfile
 
 import backend.updates as updates
 
-CURRENT = "1.1.0"
-NEW = "1.1.1"
+CURRENT = "1.1.1"
+NEW = "1.1.2"
 
 
 def package(version=NEW, extra=None, manifest=None):

@@ -102,7 +102,7 @@ class PluginLifecycleTests(unittest.IsolatedAsyncioTestCase):
         self.assertIsNone(self.plugin.startup_error)
         self.assertTrue((await self.plugin.dispatch("snapshot", {}))["ok"])
 
-    async def test_startup_warms_playback_without_waiting_for_network(self):
+    async def test_startup_defers_spotify_reads_until_panel_opens(self):
         await self.plugin._unload()
         Store(self.settings).update(refresh_token="test-refresh")
         release = asyncio.Event()
@@ -113,18 +113,63 @@ class PluginLifecycleTests(unittest.IsolatedAsyncioTestCase):
             await release.wait()
             return {"display_name": "Test listener"} if path == "/me" else None
 
-        with patch("backend.spotify.Spotify.request", new=AsyncMock(side_effect=delayed_request)):
+        with patch("backend.spotify.Spotify.request", new=AsyncMock(side_effect=delayed_request)) as request:
             try:
                 await asyncio.wait_for(self.plugin._main(), 0.2)
-                await asyncio.wait_for(started.wait(), 0.2)
+                await asyncio.sleep(0)
+                request.assert_not_awaited()
                 self.assertFalse(self.plugin.closing)
                 self.assertIsNone(self.plugin.startup_error)
                 result = await asyncio.wait_for(self.plugin.dispatch("snapshot", {}), 0.2)
+                await asyncio.wait_for(started.wait(), 0.2)
                 self.assertTrue(result["ok"])
                 self.assertTrue(result["data"]["playbackPending"])
             finally:
                 release.set()
                 await self.plugin._unload()
+
+    async def test_saved_enabled_player_never_starts_or_selects_on_reload(self):
+        for engine in ('soloist', 'flatpak'):
+            with self.subTest(engine=engine):
+                await self.plugin._unload()
+                Store(self.settings).update(player_enabled=True, player_engine=engine,
+                                            soloist_key='saved-key', soloist_paired=True,
+                                            refresh_token='saved-refresh')
+                with patch('backend.player.Player.start', new=AsyncMock()) as soloist_start, \
+                     patch('backend.flatpak_player.FlatpakPlayer.start', new=AsyncMock()) as flatpak_start, \
+                     patch('backend.flatpak_player.FlatpakPlayer.initialize', new=AsyncMock()), \
+                     patch('backend.service.Service.start_auto_select') as select, \
+                     patch('backend.spotify.Spotify.request', new=AsyncMock()) as request:
+                    await self.plugin._main()
+                    await asyncio.sleep(0)
+                    self.assertIsNone(self.plugin.startup_error)
+                    soloist_start.assert_not_awaited()
+                    flatpak_start.assert_not_awaited()
+                    select.assert_not_called()
+                    request.assert_not_awaited()
+                    self.assertIsNone(self.plugin.service._auto_select_task)
+                saved = Store(self.settings).data
+                self.assertFalse(saved['player_enabled'])
+                self.assertEqual(saved['player_engine'], engine)
+                self.assertEqual(saved['soloist_key'], 'saved-key')
+                self.assertTrue(saved['soloist_paired'])
+
+    async def test_explicit_start_selects_player_but_does_not_enable_next_reload(self):
+        async def start():
+            self.plugin.service.player.store.update(player_enabled=True)
+        with patch.object(self.plugin.service.player, 'start', new=AsyncMock(side_effect=start)) as launch, \
+             patch.object(self.plugin.service, 'start_auto_select') as select:
+            result = await self.plugin.dispatch('player', {'action': 'start'})
+            self.assertTrue(result['ok'])
+            launch.assert_awaited_once_with()
+            select.assert_called_once_with()
+        await self.plugin._unload()
+        with patch('backend.player.Player.start', new=AsyncMock()) as launch, \
+             patch('backend.service.Service.start_auto_select') as select:
+            await self.plugin._main()
+            launch.assert_not_awaited()
+            select.assert_not_called()
+        self.assertFalse(self.plugin.service.player.store.data['player_enabled'])
 
     async def test_unknown_rpc_and_invalid_inputs_cannot_invoke_arbitrary_methods(self):
         for method, args in [("__dict__", {}), ("_unload", {}), ("snapshot", "bad")]:

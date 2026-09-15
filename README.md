@@ -28,13 +28,13 @@ Play your music, browse playlists and adjust the mix without leaving Gaming Mode
 | **Playback options** | Shuffle, repeat and save the current track to Liked Songs |
 | **Sleep timer** | Pause after 1–240 minutes, including while QAM is closed |
 | **Phone sign-in** | A locally generated QR code connects a phone on the same network directly to the handheld |
-| **Playback devices** | Automatically select SpotiDeck at startup; switch to another available Spotify Connect device when needed |
+| **Playback devices** | Start and select the handheld on request; switch to another available Spotify Connect device when needed |
 | **Separate audio controls** | Adjust Spotify and all other handheld audio independently |
 | **Game / Spotify balance** | One slider with both sources at full volume in the centre; moving either way lowers only the opposite source |
 | **Controller navigation** | Native Decky controls with A to select, B to return and X to queue supported track rows |
 | **Local playback** | Choose Spotify Soloist or the Spotify Flatpak app in Settings; keep the same controller-friendly QAM |
 | **Live player state** | Local Soloist events or Spotify desktop's MPRIS interface update playback state |
-| **Startup recovery** | Retry a previously paired player that started before the network was ready, without automatically playing music |
+| **Player recovery** | After a manual start, retry a previously paired player if the network is not ready, without automatically playing music |
 | **Saved preferences** | Retains the volume mode and balance position across plugin restarts |
 | **Plugin updates** | Check GitHub for a newer release and download its verified installation ZIP to your Downloads folder |
 
@@ -59,12 +59,12 @@ confirmed A/B/D-pad navigation and audible game/Spotify balance during gameplay.
 ## Installation
 
 1. Install [Decky Loader](https://decky.xyz) if it is not already installed.
-2. Download **SpotiDeck-1.1.0.zip** from the [latest release](https://github.com/Rayekkk/SpotiDeck/releases/latest), or build it from source below.
+2. Download **SpotiDeck-1.1.1.zip** from the [latest release](https://github.com/Rayekkk/SpotiDeck/releases/latest), or build it from source below.
 3. In Gaming Mode, open **Quick Access Menu → Decky → Settings → Developer**.
 4. Choose **Install Plugin from ZIP** and select the archive.
 5. Open the plugin and complete [Spotify setup](#spotify-setup).
 
-The package is `artifacts/SpotiDeck-1.1.0.zip`, containing one `SpotiDeck`
+The package is `artifacts/SpotiDeck-1.1.1.zip`, containing one `SpotiDeck`
 folder. Open **SpotiDeck** in the Decky menu after installation.
 
 For an existing installation of the earlier alpha named Spotify, use the
@@ -168,7 +168,12 @@ handheld; QR generation is local. Phone sign-in does not replace the Client ID o
 2. Generate your personal key using [Spotify's Soloist authentication guide](https://developer.spotify.com/documentation/soloist/concepts/authentication).
 3. Paste it into **Player key**, choose **Save key**, then **Start player**.
 4. Open the Spotify app on the same local network and select **SpotiDeck** once to pair the local player.
-5. Return to the plugin. SpotiDeck selects its local player automatically after pairing and on later startups.
+5. On later sessions, use **Start player on this handheld** on the main page, or **Start player** in Settings. This starts and selects the local receiver; choose Play or a song when ready.
+
+The local player stays off after a console restart or Decky reload, even if it was
+running before. Installation, saved credentials and opening the plugin do not start
+Soloist or transfer playback from your phone. The regular Play button controls the
+currently selected Spotify device. Once started, local playback continues when QAM closes.
 
 The executable is downloaded separately from Spotify's servers. It is not included in
 the plugin ZIP. Your Soloist key stays in the handheld's private settings.
@@ -331,10 +336,11 @@ for the current rules.
 
 <br>
 
-In Settings, check that the local player is installed, has a saved key and is running.
-Pair it once through the Spotify app on the same network. SpotiDeck then selects it
-automatically; **Playback device** also lets you choose it manually. An account
-connection alone does not start music.
+In Settings, check that the local player is installed and has a saved key. Use
+**Start player on this handheld** on the main page to start it. Pair it once through
+the Spotify app on the same network. After each manual start, SpotiDeck selects it;
+**Playback device** also lets you choose it manually. An account connection alone
+does not start music.
 
 To replace a stopped or outdated Soloist build, stop the player, choose **Update player
 from Spotify**, then start it again. Downloads come from

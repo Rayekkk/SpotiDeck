@@ -36,21 +36,19 @@ class Plugin:
                 raise ValueError("Decky did not provide a settings directory.")
             runtime = getattr(decky, "DECKY_PLUGIN_RUNTIME_DIR", None) or os.environ.get("DECKY_PLUGIN_RUNTIME_DIR") or str(Path(directory) / "runtime")
             store = Store(directory)
+            # A saved Start choice from an older version is not consent to take
+            # over Spotify Connect on the next boot or Decky reload.
+            if store.data.get("player_enabled"):
+                store.update(player_enabled=False)
             player = Player(store, runtime)
             await player.initialize()
             mixer = AudioMixer(store, owned_player_pid=lambda: getattr(player.process, "pid", None))
             self.service = Service(Spotify(store), player, mixer)
             await mixer.start()
             self.closing = False
-            if store.data.get("player_enabled"):
-                try:
-                    await self.service.player.start(persist=False)
-                except SpotifyError as error:
-                    self.service.player.error = str(error)
-                self.service.start_auto_select()
-            # Warm playback once during startup; the panel never waits for network I/O.
-            await self.service.quick_snapshot()
-            decky.logger.info("SpotiDeck 1.1.0 loaded (pid=%s uid=%s)", os.getpid(),
+            # Spotify reads begin when the panel is opened. Local playback and
+            # Connect selection begin only after an explicit player action.
+            decky.logger.info("SpotiDeck 1.1.1 loaded (pid=%s uid=%s)", os.getpid(),
                               os.geteuid() if hasattr(os, "geteuid") else "unavailable")
         except Exception:
             self.startup_error = "SpotiDeck could not initialize its settings or local services. Check the plugin installation."

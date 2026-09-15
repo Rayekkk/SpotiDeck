@@ -1,5 +1,30 @@
 # Changelog
 
+## 1.1.1 - 2026-09-15
+
+### Fixed
+
+- The local player stays off after a console restart or Decky reload, including existing installations that previously saved an enabled player. SpotiDeck no longer starts Soloist or selects the handheld's Spotify Connect receiver just because the plugin is installed and configured.
+- Spotify status reads begin when the plugin panel is opened. Opening the panel does not start the local player or transfer playback from another device.
+
+### Added
+
+- **Start player on this handheld** on the main page starts and selects the local receiver on request. The regular Play button continues to control the currently selected Spotify device.
+
+### Changed
+
+- Saved credentials, Soloist pairing and player choice are preserved. After a manual start, music continues when QAM closes; after a console restart or Decky reload, start the local player again when needed.
+- Updated setup instructions and player status guidance to explain manual startup.
+
+### Internal
+
+- Added regression tests for saved configurations, explicit startup, Decky reloads and keeping remote Play separate from local player startup.
+- Verified on Legion Go 2 that the player stays off after Decky reload and panel opening, starts from the new button, and stays off after another reload. Full console reboot was not part of this live check.
+
+### Install
+
+Download `SpotiDeck-1.1.1.zip`, then in Decky: gear icon, Developer, **Install Plugin from ZIP File**.
+
 ## 1.1.0 - 2026-09-07
 
 ### Added
